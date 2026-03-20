@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Discrete Math Truth Table Generator</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Truth Table Generator</h1>
+      <p class="subtitle">Enter a proposition using the on-screen keyboard.</p>
+
+      <div class="display-container">
+        <input
+          type="text"
+          id="proposition-display"
+          readonly
+          placeholder="e.g., (P ∨ Q) → ¬R"
+        />
+      </div>
+
+      <div class="keyboard">
+        <div class="key-row">
+          <button class="key var-key" onclick="typeChar('P')">P</button>
+          <button class="key var-key" onclick="typeChar('Q')">Q</button>
+          <button class="key var-key" onclick="typeChar('R')">R</button>
+          <button class="key var-key" onclick="typeChar('A')">A</button>
+          <button class="key var-key" onclick="typeChar('B')">B</button>
+        </div>
+
+        <div class="key-row">
+          <button class="key op-key" onclick="typeChar('¬')">
+            ¬<br /><small>(NOT)</small>
+          </button>
+          <button class="key op-key" onclick="typeChar('∧')">
+            ∧<br /><small>(AND)</small>
+          </button>
+          <button class="key op-key" onclick="typeChar('∨')">
+            ∨<br /><small>(OR)</small>
+          </button>
+          <button class="key op-key" onclick="typeChar('→')">
+            →<br /><small>(IMPLIES)</small>
+          </button>
+          <button class="key op-key" onclick="typeChar('↔')">
+            ↔<br /><small>(IFF)</small>
+          </button>
+        </div>
+
+        <div class="key-row">
+          <button class="key bracket-key" onclick="typeChar('(')">(</button>
+          <button class="key bracket-key" onclick="typeChar(')')">)</button>
+          <button class="key action-key" onclick="backspace()">
+            ⌫ Backspace
+          </button>
+          <button class="key action-key clear-key" onclick="clearDisplay()">
+            Clear
+          </button>
+        </div>
+
+        <div class="key-row">
+          <button class="key generate-key" onclick="generateTable()">
+            Generate Truth Table
+          </button>
+        </div>
+      </div>
+
+      <div id="result-container" class="hidden">
+        <h2 id="classification-label">Result:</h2>
+        <div class="table-wrapper">
+          <table id="truth-table">
+            <thead id="table-head"></thead>
+            <tbody id="table-body"></tbody>
+          </table>
+        </div>
+        <div style="text-align: center; margin-top: 1.5rem">
+          <button
+            class="key action-key"
+            onclick="copyToClipboard()"
+            style="
+              padding: 0.8rem 1.5rem;
+              font-weight: bold;
+              border-radius: 12px;
+              border: 2px solid #ddd6fe;
+              color: #7c3aed;
+            "
+          >
+            📋 Copy Table to Clipboard
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="logic.js"></script>
+
+    <script>
+      const display = document.getElementById("proposition-display");
+      const engine = new LogicEngine();
+
+      function typeChar(char) {
+        display.value += char;
+      }
+
+      function backspace() {
+        display.value = display.value.slice(0, -1);
+      }
+
+      function clearDisplay() {
+        display.value = "";
+        document.getElementById("result-container").classList.add("hidden");
+      }
+
+      function generateTable() {
+        const expression = display.value;
+        if (!expression) return;
+
+        const result = engine.analyzeProposition(expression);
+
+        if (!result.success) {
+          alert(
+            "Invalid Proposition! Please check your syntax (e.g., unmatched brackets or missing variables).",
+          );
+          return;
+        }
+
+        document.getElementById("result-container").classList.remove("hidden");
+
+        const label = document.getElementById("classification-label");
+        label.innerText = `Type: ${result.classification}`;
+        label.className = result.classification.toLowerCase();
+
+        const thead = document.getElementById("table-head");
+        thead.innerHTML = "";
+        const headerRow = document.createElement("tr");
+
+        result.variables.forEach((v) => {
+          const th = document.createElement("th");
+          th.innerText = v;
+          headerRow.appendChild(th);
+        });
+
+        result.stepHeaders.forEach((step) => {
+          const th = document.createElement("th");
+          th.innerText = step;
+          headerRow.appendChild(th);
+        });
+
+        const resTh = document.createElement("th");
+        resTh.innerText = expression;
+        resTh.classList.add("output-col");
+        headerRow.appendChild(resTh);
+        thead.appendChild(headerRow);
+
+        const tbody = document.getElementById("table-body");
+        tbody.innerHTML = "";
+
+        result.tableData.forEach((rowData) => {
+          const tr = document.createElement("tr");
+
+          result.variables.forEach((v) => {
+            const td = document.createElement("td");
+            td.innerText = rowData.values[v] ? "T" : "F";
+            td.classList.add(rowData.values[v] ? "true-val" : "false-val");
+            tr.appendChild(td);
+          });
+
+          result.stepHeaders.forEach((step) => {
+            const td = document.createElement("td");
+            const stepVal = rowData.steps[step];
+            td.innerText = stepVal ? "T" : "F";
+            td.classList.add(stepVal ? "true-val" : "false-val");
+            tr.appendChild(td);
+          });
+
+          const resTd = document.createElement("td");
+          resTd.innerText = rowData.result ? "T" : "F";
+          resTd.classList.add("output-col");
+          resTd.classList.add(rowData.result ? "true-val" : "false-val");
+          tr.appendChild(resTd);
+
+          tbody.appendChild(tr);
+        });
+      }
+      function copyToClipboard() {
+        const expression = display.value;
+        const label = document.getElementById("classification-label").innerText;
+        const thead = document.getElementById("table-head");
+        const tbody = document.getElementById("table-body");
+
+        let textData = `Proposition: ${expression}\n${label}\n\n`;
+
+        const headers = Array.from(thead.querySelectorAll("th")).map(
+          (th) => th.innerText,
+        );
+        textData += headers.join("  |  ") + "\n";
+        textData += "-".repeat(headers.join("  |  ").length) + "\n";
+
+        const rows = Array.from(tbody.querySelectorAll("tr"));
+        rows.forEach((row) => {
+          const cells = Array.from(row.querySelectorAll("td")).map(
+            (td) => td.innerText,
+          );
+          textData += cells.join("  |  ") + "\n";
+        });
+
+        navigator.clipboard
+          .writeText(textData)
+          .then(() => {
+            alert("Table copied successfully!");
+          })
+          .catch((err) => {
+            alert("Failed to copy text. Your browser might be blocking it.");
+          });
+      }
+    </script>
+  </body>
+</html>
