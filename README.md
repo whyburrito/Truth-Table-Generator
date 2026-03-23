@@ -4,6 +4,8 @@ A lightweight, web-based logic engine that parses propositional logic expression
 
 **[View Live Demo](https://whyburrito.github.io/Truth-Table-Generator/)**
 
+![Truth Table Generator UI](screenshot.png)
+
 ## Features
 
 * **Custom Logic Parser:** Implements Edsger Dijkstra's Shunting-yard algorithm to convert standard infix notation into Reverse Polish Notation (Postfix) for accurate evaluation of logical precedence.
